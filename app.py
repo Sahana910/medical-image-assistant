@@ -118,6 +118,4 @@ if uploaded_file is not None:
 
     except Exception as e:
         st.error("❌ An error occurred while processing the image.")
-        st.exception(e)
-else:
-    st.info("Please upload an image to begin analysis.")
+        st.exception
