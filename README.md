@@ -21,7 +21,7 @@ It uses simulated AI inference and is built with **Streamlit**, making it fast a
 Try the hosted version here:  
 🔗 [https://your-app-name.streamlit.app ](https://your-app-name.streamlit.app )
 
-> Replace this link with your actual deployed URL after deployment.
+
 
 ---
 
@@ -44,9 +44,3 @@ Try the hosted version here:
 | AI Logic | Simulated model (`model.py`) |
 | Visualization | Matplotlib, Numpy |
 | Hosting | Streamlit Community Cloud / Hugging Face Spaces |
-
----
-
-## 📦 Requirements
-
-Make sure these packages are installed:
