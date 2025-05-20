@@ -1,20 +1,21 @@
+# app.py
+
 import streamlit as st
 from PIL import Image
 import numpy as np
-import model  # Your simulated or real model logic
+import model
+import io
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 
-# ----------------------
-# Page Configuration
-# ----------------------
 st.set_page_config(page_title="Medical Image Diagnostic Assistant", layout="wide")
+
+# Custom CSS for medical theme
 st.markdown("""
 <style>
     body {
-        background-color: #f8f9fa;
+        background-color: #f0f4f8;
         font-family: 'Segoe UI', sans-serif;
-    }
-    .reportview-container {
-        padding: 20px;
     }
     .card {
         background-color: white;
@@ -26,87 +27,97 @@ st.markdown("""
     .condition-high { color: red; font-weight: bold; }
     .condition-medium { color: orange; font-weight: bold; }
     .condition-low { color: green; font-weight: bold; }
+    h1 {
+        text-align: center;
+        color: #007BFF;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# ----------------------
-# Header Section
-# ----------------------
-st.markdown("<h1 style='text-align: center;'>🩺 Medical Image Diagnostic Assistant</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; font-size: 1.2em;'>Upload a chest X-ray, CT scan, or MRI for AI-assisted diagnosis.</p>", unsafe_allow_html=True)
+# Header
+st.markdown("<h1>🩺 Medical Image Diagnostic Assistant</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center;'>Upload a chest X-ray, CT scan, or MRI for AI-assisted diagnosis.</p>", unsafe_allow_html=True)
 
-# ----------------------
-# Sidebar Instructions
-# ----------------------
+# Sidebar instructions
 st.sidebar.image("assets/logo.png", width=80)
 st.sidebar.header("Instructions")
 st.sidebar.markdown("""
 1. Upload an image.
-2. View the AI's findings.
+2. View AI findings.
 3. See highlighted regions of interest.
 """)
 
-# ----------------------
-# File Uploader
-# ----------------------
+# File uploader
 uploaded_file = st.file_uploader("Choose an image file", type=["jpg", "png", "jpeg"])
 
 if uploaded_file is not None:
-    # Load image
-    image = Image.open(uploaded_file).convert("RGB").resize((224, 224))
+    try:
+        # Load and display original image
+        image = Image.open(uploaded_file).convert("RGB").resize((224, 224))
 
-    # Run model
-    result = model.predict(image)
+        # Run simulated AI model
+        result = model.predict(image)
 
-    # ----------------------
-    # Image Viewer
-    # ----------------------
-    col1, col2 = st.columns([2, 3])
+        # Display image and heatmap side-by-side
+        col1, col2 = st.columns([2, 3])
 
-    with col1:
+        with col1:
+            st.markdown('<div class="card">', unsafe_allow_html=True)
+            st.subheader("🖼️ Uploaded Image")
+            st.image(image, use_container_width=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        with col2:
+            st.markdown('<div class="card">', unsafe_allow_html=True)
+            st.subheader("🧠 AI Analysis")
+
+            # Urgency Level
+            urgency_badge = {
+                "High": "🔴",
+                "Medium": "🟡",
+                "Routine": "🟢"
+            }
+            st.markdown(f"**Urgency Level:** {urgency_badge[result['urgency']]} **{result['urgency']}**")
+
+            # Predicted Conditions
+            st.markdown("### 🧾 Predicted Conditions:")
+            for pred in result['predictions']:
+                conf = int(pred['condition'] in ["Pneumothorax", "Cardiomegaly"]) and "condition-high" or \
+                       int(pred['condition'] in ["Pleural Effusion", "Mass"]) and "condition-medium" or "condition-low"
+                st.markdown(f"- <span class='{conf}'>{pred['condition']}</span>: {int(pred['confidence'] * 100)}% confidence", unsafe_allow_html=True)
+
+            # Heatmap Overlay
+            st.markdown("### 🔥 AI Focus Areas")
+            fig, ax = plt.subplots()
+            ax.imshow(image, cmap='gray')
+            ax.imshow(result['heatmap'], alpha=0.5, cmap=cm.jet)
+            ax.axis('off')
+            buf = io.BytesIO()
+            plt.savefig(buf, format='png', bbox_inches='tight', pad_inches=0)
+            buf.seek(0)
+            heatmap_img = Image.open(buf)
+            st.image(heatmap_img, caption="AI Attention Map", use_container_width=True)
+
+            # Explanation
+            st.markdown("### ℹ️ Explanation")
+            st.write("The AI analyzed patterns in the lungs and surrounding areas. Abnormalities like air outside the lungs (Pneumothorax) were detected with high confidence.")
+
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        # Image Metadata Section
         st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.subheader("🖼️ Uploaded Image")
-        st.image(image, use_column_width=True)
+        st.markdown("### 📄 Image Metadata")
+        st.write(f"**File Name:** {uploaded_file.name}")
+        st.write(f"**File Size:** {uploaded_file.size / 1024:.2f} KB")
+        st.write(f"**Dimensions:** {image.width} x {image.height}")
+
+        description = st.text_area("📝 Describe this image (optional)", height=100)
+        if description:
+            st.markdown(f"**Description:** {description}")
         st.markdown('</div>', unsafe_allow_html=True)
 
-    with col2:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.subheader("🧠 AI Analysis")
-
-        # Urgency Level
-        urgency = result['urgency']
-        urgency_badge = {
-            "High": "🔴",
-            "Medium": "🟡",
-            "Routine": "🟢"
-        }
-
-        st.markdown(f"**Urgency Level:** {urgency_badge[urgency]} **{urgency}**")
-
-        # Predictions
-        st.markdown("### 🧾 Predicted Conditions:")
-        for pred in result['predictions']:
-            condition = pred['condition']
-            conf = int(pred['confidence'] * 100)
-            color_class = "condition-high" if condition in ["Pneumothorax", "Cardiomegaly"] else \
-                         "condition-medium" if condition in ["Pleural Effusion", "Mass"] else "condition-low"
-
-            st.markdown(f"- <span class='{color_class}'>{condition}</span>: {conf}% confidence", unsafe_allow_html=True)
-
-        # Heatmap
-        st.markdown("### 🔥 AI Focus Areas")
-        heatmap = result['heatmap']
-        heatmap -= heatmap.min()
-        heatmap /= heatmap.max()
-        heatmap = np.uint8(255 * heatmap)
-        heatmap_img = Image.fromarray(heatmap).resize((224, 224)).convert("RGB")
-        st.image(heatmap_img, caption="AI Attention Map", use_column_width=True)
-
-        # Explanation
-        st.markdown("### ℹ️ Explanation")
-        st.markdown("The AI analyzed patterns in the lungs and surrounding areas. Abnormalities like air outside the lungs (Pneumothorax) were detected with high confidence.", unsafe_allow_html=True)
-
-        st.markdown('</div>', unsafe_allow_html=True)
-
+    except Exception as e:
+        st.error("❌ An error occurred while processing the image.")
+        st.exception(e)
 else:
     st.info("Please upload an image to begin analysis.")
