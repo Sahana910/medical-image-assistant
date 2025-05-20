@@ -75,7 +75,7 @@ if uploaded_file is not None:
                 "Routine": "🟢"
             }
             st.markdown(f"**Urgency Level:** {urgency_badge[result['urgency']]} **{result['urgency']}**")
-            
+
             # Predicted Conditions
             st.markdown("### 🧾 Predicted Conditions:")
             for pred in result['predictions']:
@@ -83,20 +83,27 @@ if uploaded_file is not None:
                        int(pred['condition'] in ["Pleural Effusion", "Mass"]) and "condition-medium" or "condition-low"
                 st.markdown(f"- <span class='{conf}'>{pred['condition']}</span>: {int(pred['confidence'] * 100)}% confidence", unsafe_allow_html=True)
 
-            # Heatmap Overlay
-            st.markdown("### 🔥 AI Focus Areas")
-            heatmap = result['heatmap']
-            heatmap_img = Image.fromarray(heatmap).convert("L").resize((224, 224))
-            heatmap_color = heatmap_img.convert("RGBA")
-            heatmap_color = Image.blend(
-                Image.new("RGBA", heatmap_color.size, (255, 255, 255, 255)),
-                heatmap_color, alpha=0.5
-            )
-            final_image = Image.alpha_composite(image.convert("RGBA"), heatmap_color)
-            st.image(final_image.convert("RGB"), caption="AI Attention Map", use_container_width=True)
+            # Heatmap Overlay (Red Tint Using PIL Only)
+            def apply_red_heatmap(heatmap):
+                r = heatmap.copy()
+                g = np.zeros_like(heatmap)
+                b = np.zeros_like(heatmap)
+                heatmap_color = np.stack([r, g, b], axis=-1)
+                return Image.fromarray(heatmap_color).convert("RGBA")
 
-            # Explanation
-            st.markdown("### ℹ️ Explanation")
+            def blend_images(base_image, heatmap_image, alpha=0.5):
+                return Image.blend(base_image.convert("RGBA"), heatmap_image, alpha)
+
+            # Apply overlay
+            heatmap_img = result['heatmap']
+            colored_heatmap = apply_red_heatmap(heatmap_img)
+            overlay_image = blend_images(image, colored_heatmap, alpha=0.6)
+
+            st.markdown("### 🔥 AI Focus Areas")
+            st.image(overlay_image.convert("RGB"), caption="AI Attention Map", use_container_width=True)
+
+            # Explanation / AI Insights
+            st.markdown("### ℹ️ AI Insights")
             st.write("The AI analyzed patterns in the lungs and surrounding areas. Abnormalities like air outside the lungs (Pneumothorax) were detected with high confidence.")
 
             st.markdown('</div>', unsafe_allow_html=True)
