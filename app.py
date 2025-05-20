@@ -74,8 +74,8 @@ if uploaded_file is not None:
                 "Medium": "🟡",
                 "Routine": "🟢"
             }
-            st.markdown(f"**Urgency Level:** {urgency_badge[result['urgency']}] **{result['urgency']}**")
-
+            st.markdown(f"**Urgency Level:** {urgency_badge[result['urgency']]} **{result['urgency']}**")
+            
             # Predicted Conditions
             st.markdown("### 🧾 Predicted Conditions:")
             for pred in result['predictions']:
