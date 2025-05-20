@@ -25,8 +25,6 @@ It uses simulated AI inference and is built with **Streamlit**, making it fast a
 Try the hosted version here:  
 🔗 [https://your-app-name.streamlit.app ](https://medical-image-assistant-fjebj69a4ehw56s2atqddt.streamlit.app/)
 
-> Replace this link with your actual deployed URL after deployment.
-
 ---
 
 ## 🧠 Features
