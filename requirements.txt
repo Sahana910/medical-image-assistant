@@ -1,6 +1,6 @@
 streamlit==1.29.0
 pillow==9.4.0
 numpy==1.24.3
-torch==2.1.0
-torchvision==0.16.0
+torch==1.13.1
+torchvision==0.14.1
 matplotlib==3.7.1
