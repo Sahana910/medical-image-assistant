@@ -4,9 +4,6 @@ import streamlit as st
 from PIL import Image
 import numpy as np
 import model
-import io
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
 
 st.set_page_config(page_title="Medical Image Diagnostic Assistant", layout="wide")
 
@@ -77,7 +74,7 @@ if uploaded_file is not None:
                 "Medium": "🟡",
                 "Routine": "🟢"
             }
-            st.markdown(f"**Urgency Level:** {urgency_badge[result['urgency']]} **{result['urgency']}**")
+            st.markdown(f"**Urgency Level:** {urgency_badge[result['urgency']}] **{result['urgency']}**")
 
             # Predicted Conditions
             st.markdown("### 🧾 Predicted Conditions:")
@@ -88,15 +85,15 @@ if uploaded_file is not None:
 
             # Heatmap Overlay
             st.markdown("### 🔥 AI Focus Areas")
-            fig, ax = plt.subplots()
-            ax.imshow(image, cmap='gray')
-            ax.imshow(result['heatmap'], alpha=0.5, cmap=cm.jet)
-            ax.axis('off')
-            buf = io.BytesIO()
-            plt.savefig(buf, format='png', bbox_inches='tight', pad_inches=0)
-            buf.seek(0)
-            heatmap_img = Image.open(buf)
-            st.image(heatmap_img, caption="AI Attention Map", use_container_width=True)
+            heatmap = result['heatmap']
+            heatmap_img = Image.fromarray(heatmap).convert("L").resize((224, 224))
+            heatmap_color = heatmap_img.convert("RGBA")
+            heatmap_color = Image.blend(
+                Image.new("RGBA", heatmap_color.size, (255, 255, 255, 255)),
+                heatmap_color, alpha=0.5
+            )
+            final_image = Image.alpha_composite(image.convert("RGBA"), heatmap_color)
+            st.image(final_image.convert("RGB"), caption="AI Attention Map", use_container_width=True)
 
             # Explanation
             st.markdown("### ℹ️ Explanation")
@@ -118,4 +115,6 @@ if uploaded_file is not None:
 
     except Exception as e:
         st.error("❌ An error occurred while processing the image.")
-        st.exception
+        st.exception(e)
+else:
+    st.info("Please upload an image to begin analysis.")
